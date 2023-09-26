@@ -15,22 +15,37 @@ routerCategory.get(`/`, async (req, res) => {
   res.send(categoryList);
 });
 
-routerCategory.post(`/`, (req, res) => {
-  const category = new Category({
+routerCategory.post(`/`, async (req, res) => {
+  let category = new Category({
     name: req.body.name,
-    image: req.body.image,
-    countInStock: req.body.countInStock,
+    icon: req.body.icon,
+    color: req.body.color,
   });
 
-  category
-    .save()
-    .then((createdCategory) => {
-      res.status(201).json(createdCategory);
+  category = await category.save();
+
+  if (!category) {
+    return res.status(404).send("the category cannot be created");
+  }
+
+  res.send(category);
+});
+
+routerCategory.delete("/:id", (req, res) => {
+  Category.findByIdAndRemove(req.params.id)
+    .then((category) => {
+      if (category) {
+        return res.status(200).json({
+          success: true,
+          message: "Category is deleted",
+        });
+      } else {
+        return res
+          .status(404)
+          .json({ success: false, message: "Category not found" });
+      }
     })
     .catch((err) => {
-      res.status(501).json({
-        error: err,
-        success: false,
-      });
+      return res.status(400).json({ success: false, error: err });
     });
 });

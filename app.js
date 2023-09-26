@@ -9,13 +9,13 @@ import { routerCategory } from "./routers/categories.js";
 import { routerOrder } from "./routers/orders.js";
 import { routerUser } from "./routers/users.js";
 
-app.use(cors());
-app.options("*", cors());
-
 dotenv.config();
 
 const app = express();
 const api = process.env.API_URL;
+
+app.use(cors());
+app.options("*", cors());
 
 /*  Middleware */
 app.use(express.json());
