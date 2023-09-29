@@ -8,6 +8,8 @@ import { routerProduct } from "./routers/products.js";
 import { routerCategory } from "./routers/categories.js";
 import { routerOrder } from "./routers/orders.js";
 import { routerUser } from "./routers/users.js";
+import { authJwt } from "./helper/jwt.js";
+import { errorHandler } from "./helper/error-handler.js";
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ app.options("*", cors());
 /*  Middleware */
 app.use(express.json());
 app.use(morgan("tiny"));
+app.use(authJwt());
+app.use(errorHandler);
 
 /* Routers */
 app.use(`${api}/products`, routerProduct);
