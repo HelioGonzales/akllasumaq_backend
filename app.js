@@ -4,6 +4,9 @@ import morgan from "morgan";
 import mongoose from "mongoose";
 import cors from "cors";
 
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
 import { routerProduct } from "./routers/products.js";
 import { routerCategory } from "./routers/categories.js";
 import { routerOrder } from "./routers/orders.js";
@@ -16,6 +19,9 @@ dotenv.config();
 const app = express();
 const api = process.env.API_URL;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 app.use(cors());
 app.options("*", cors());
 
@@ -23,6 +29,7 @@ app.options("*", cors());
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(authJwt());
+app.use("/public/uploads", express.static(__dirname + "/public/uploads"));
 app.use(errorHandler);
 
 /* Routers */
