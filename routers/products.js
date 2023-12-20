@@ -78,7 +78,7 @@ routerProduct.put("/:id", uploadOptions.single("image"), async (req, res) => {
 
   if (file) {
     const fileName = req.file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+    const basePath = `https://${req.get("host")}/public/uploads/`;
     imagesPath = `${basePath}${fileName}`;
   } else {
     imagesPath = product.image;
@@ -123,7 +123,7 @@ routerProduct.post(`/`, uploadOptions.single("image"), async (req, res) => {
   }
 
   const fileName = req.file.filename;
-  const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+  const basePath = `https://${req.get("host")}/public/uploads/`;
 
   let product = await new Product({
     name: req.body.name,
@@ -200,7 +200,7 @@ routerProduct.put(
 
     const files = req.files;
     let imagesPaths = [];
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+    const basePath = `https://${req.get("host")}/public/uploads/`;
 
     if (files) {
       files.map((file) => {

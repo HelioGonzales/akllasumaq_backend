@@ -62,7 +62,7 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
   }
 
   const fileName = req.file.filename;
-  const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+  const basePath = `https://${req.get("host")}/public/uploads/`;
 
   let category = await new Category({
     name: req.body.name,
@@ -93,7 +93,7 @@ routerCategory.put("/:id", uploadOptions.single("image"), async (req, res) => {
 
   if (file) {
     const fileName = req.file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+    const basePath = `https://${req.get("host")}/public/uploads/`;
     imagesPath = `${basePath}${fileName}`;
   } else {
     imagesPath = category.image;
