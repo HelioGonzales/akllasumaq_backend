@@ -41,8 +41,9 @@ const orderSchema = mongoose.Schema({
     type: Number,
   },
   user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    // type: mongoose.Schema.Types.ObjectId,
+    // ref: "User",
+    type: String,
   },
   dateOrdered: {
     type: Date,
