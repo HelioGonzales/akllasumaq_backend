@@ -1,7 +1,9 @@
 import express from "express";
 import mongoose from "mongoose";
 import multer from "multer";
+import sharp from "sharp";
 import { Category } from "../models/category.js";
+import { s3Commands } from "../helper/s3Helper.js";
 
 export const routerCategory = express.Router();
 
@@ -29,7 +31,19 @@ const storage = multer.diskStorage({
   },
 });
 
-const uploadOptions = multer({ storage: storage });
+const uploadOptions = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed."));
+    }
+  },
+});
 
 /* Route */
 routerCategory.get(`/`, async (req, res) => {
@@ -63,6 +77,15 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
 
   const fileName = req.file.filename;
   const basePath = `https://${req.get("host")}/public/uploads/`;
+
+  await sharp(req.file.buffer)
+    .rotate()
+    .toBuffer()
+    .then((buffer) => {
+      //save to s3
+      return s3Commands.addObject(fileName, buffer);
+    })
+    .catch((err) => console.log(err));
 
   let category = await new Category({
     name: req.body.name,
