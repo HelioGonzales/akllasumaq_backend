@@ -4,6 +4,7 @@ import multer from "multer";
 import sharp from "sharp";
 import { Category } from "../models/category.js";
 import { s3Commands } from "../helper/s3Helper.js";
+import * as fs from "fs";
 
 export const routerCategory = express.Router();
 
@@ -31,13 +32,35 @@ const storage = multer.diskStorage({
   },
 });
 
+//Other option
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     const uploadDir = "public/uploads";
+
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir);
+//     }
+//     cb(null, uploadDir);
+//   },
+// filename: function (req, file, cb) {
+//   const fileName = file.originalname.split(" ").join("-");
+//   const extension = FILE_TYPE_MAP[file.mimetype];
+//   cb(null, `${fileName}-${Date.now()}.${extension}`);
+// },
+// filename: function (req, file, cb) {
+//   const originalName = file.originalname;
+//   const extension = originalName.split(".").pop();
+//   cb(null, Date.now() + "." + extension);
+// },
+// });
+
 const uploadOptions = multer({
   storage: storage,
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image")) {
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
       cb(new Error("Only image files are allowed."));
@@ -77,8 +100,11 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
 
   const fileName = req.file.filename;
   const basePath = `https://${req.get("host")}/public/uploads/`;
+  // const filePath = file.filePath;
 
-  await sharp(req.file.buffer)
+  // filePath is an argument in sharp
+  // file.buffer is an argument in sharp
+  await sharp(basePath)
     .rotate()
     .toBuffer()
     .then((buffer) => {
@@ -92,6 +118,7 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
     icon: req.body.icon,
     color: req.body.color,
     image: `${basePath}${fileName}`,
+    // image: (file && fileName) || "",
   });
 
   category = await category.save();
