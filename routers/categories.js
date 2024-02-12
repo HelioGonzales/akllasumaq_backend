@@ -14,45 +14,40 @@ const FILE_TYPE_MAP = {
   "image/jpg": "jpg",
 };
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const isValid = FILE_TYPE_MAP[file.mimetype];
-    let uploadError = new Error("Invalid image type");
-
-    if (isValid) {
-      uploadError = null;
-    }
-
-    cb(uploadError, "public/uploads");
-  },
-  filename: function (req, file, cb) {
-    const fileName = file.originalname.split(" ").join("-");
-    const extension = FILE_TYPE_MAP[file.mimetype];
-    cb(null, `${fileName}-${Date.now()}.${extension}`);
-  },
-});
-
-//Other option
 // const storage = multer.diskStorage({
 //   destination: function (req, file, cb) {
-//     const uploadDir = "public/uploads";
+//     const isValid = FILE_TYPE_MAP[file.mimetype];
+//     let uploadError = new Error("Invalid image type");
 
-//     if (!fs.existsSync(uploadDir)) {
-//       fs.mkdirSync(uploadDir);
+//     if (isValid) {
+//       uploadError = null;
 //     }
-//     cb(null, uploadDir);
+
+//     cb(uploadError, "public/uploads");
 //   },
-// filename: function (req, file, cb) {
-//   const fileName = file.originalname.split(" ").join("-");
-//   const extension = FILE_TYPE_MAP[file.mimetype];
-//   cb(null, `${fileName}-${Date.now()}.${extension}`);
-// },
-// filename: function (req, file, cb) {
-//   const originalName = file.originalname;
-//   const extension = originalName.split(".").pop();
-//   cb(null, Date.now() + "." + extension);
-// },
+//   filename: function (req, file, cb) {
+//     const fileName = file.originalname.split(" ").join("-");
+//     const extension = FILE_TYPE_MAP[file.mimetype];
+//     cb(null, `${fileName}-${Date.now()}.${extension}`);
+//   },
 // });
+
+// Other option
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = "public/uploads";
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const originalName = file.originalname;
+    const extension = originalName.split(".").pop();
+    cb(null, Date.now() + "." + extension);
+  },
+});
 
 const uploadOptions = multer({
   storage: storage,

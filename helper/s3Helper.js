@@ -13,6 +13,7 @@ const s3Client = new S3Client({
     accessKeyId: process.env.ACCESSKEYID,
     secretAccessKey: process.env.SECRETACCESSKEY,
   },
+  region: process.env.REGION,
 });
 
 export const s3Commands = {
