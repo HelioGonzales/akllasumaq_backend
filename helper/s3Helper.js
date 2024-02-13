@@ -10,10 +10,10 @@ dotenv.config();
 
 const s3Client = new S3Client({
   credentials: {
-    accessKeyId: process.env.ACCESSKEYID,
-    secretAccessKey: process.env.SECRETACCESSKEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
-  region: process.env.REGION,
+  AWS_REGION: process.env.AWS_REGION,
 });
 
 export const s3Commands = {
@@ -34,7 +34,7 @@ export const s3Commands = {
     return s3Client.send(deleteCommand);
   },
   getObjectUrl: (key) => {
-    // https://[BUCKET].s3.[REGION].amazonaws.com/[KEY]
-    return `https://${process.env.BUCKETNAME}.s3.${process.env.REGION}.amazonaws.com/${key}`;
+    // https://[BUCKET].s3.[AWS_REGION].amazonaws.com/[KEY]
+    return `https://${process.env.BUCKETNAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   },
 };

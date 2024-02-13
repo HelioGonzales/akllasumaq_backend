@@ -14,40 +14,40 @@ const FILE_TYPE_MAP = {
   "image/jpg": "jpg",
 };
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const isValid = FILE_TYPE_MAP[file.mimetype];
-    let uploadError = new Error("Invalid image type");
-
-    if (isValid) {
-      uploadError = null;
-    }
-
-    cb(uploadError, "public/uploads");
-  },
-  filename: function (req, file, cb) {
-    const fileName = file.originalname.split(" ").join("-");
-    const extension = FILE_TYPE_MAP[file.mimetype];
-    cb(null, `${fileName}-${Date.now()}.${extension}`);
-  },
-});
-
-// Other option
 // const storage = multer.diskStorage({
 //   destination: function (req, file, cb) {
-//     const uploadDir = "public/uploads";
+//     const isValid = FILE_TYPE_MAP[file.mimetype];
+//     let uploadError = new Error("Invalid image type");
 
-//     if (!fs.existsSync(uploadDir)) {
-//       fs.mkdirSync(uploadDir);
+//     if (isValid) {
+//       uploadError = null;
 //     }
-//     cb(null, uploadDir);
+
+//     cb(uploadError, "public/uploads");
 //   },
 //   filename: function (req, file, cb) {
-//     const originalName = file.originalname;
-//     const extension = originalName.split(".").pop();
-//     cb(null, Date.now() + "." + extension);
+//     const fileName = file.originalname.split(" ").join("-");
+//     const extension = FILE_TYPE_MAP[file.mimetype];
+//     cb(null, `${fileName}-${Date.now()}.${extension}`);
 //   },
 // });
+
+// Other option
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = "public/uploads";
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const originalName = file.originalname;
+    const extension = originalName.split(".").pop();
+    cb(null, Date.now() + "." + extension);
+  },
+});
 
 const uploadOptions = multer({
   storage: storage,
@@ -88,6 +88,40 @@ routerCategory.get("/:id", async (req, res) => {
 });
 
 routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
+  // const file = req.file;
+  // if (!file) {
+  //   return res.status(400).send("No image in the request");
+  // }
+  // const fileName = req.file.filename;
+  // const basePath = `https://${req.get("host")}/public/uploads/`;
+  // // const filePath = file.filePath;
+  // // filePath is an argument in sharp
+  // // file.buffer is an argument in sharp
+  // // await sharp(basePath)
+  // //   .rotate()
+  // //   .toBuffer()
+  // //   .then((buffer) => {
+  // //     //save to s3
+  // //     return s3Commands.addObject(fileName, buffer);
+  // //   })
+  // //   .catch((err) => console.log(err));
+  // // Process the image directly from the buffer
+  // const buffer = await sharp(file.buffer).rotate().toBuffer();
+  // // Save to S3
+  // await s3Commands.addObject(fileName, buffer);
+  // let category = await new Category({
+  //   name: req.body.name,
+  //   icon: req.body.icon,
+  //   color: req.body.color,
+  //   image: `${basePath}${fileName}`,
+  //   // image: (file && fileName) || "",
+  // });
+  // category = await category.save();
+  // if (!category) {
+  //   return res.status(404).send("the category cannot be created");
+  // }
+  // res.send(category);
+
   const file = req.file;
   if (!file) {
     return res.status(400).send("No image in the request");
@@ -95,34 +129,30 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
 
   const fileName = req.file.filename;
   const basePath = `https://${req.get("host")}/public/uploads/`;
-  // const filePath = file.filePath;
 
-  // filePath is an argument in sharp
-  // file.buffer is an argument in sharp
-  await sharp(basePath)
-    .rotate()
-    .toBuffer()
-    .then((buffer) => {
-      //save to s3
-      return s3Commands.addObject(fileName, buffer);
-    })
-    .catch((err) => console.log(err));
+  try {
+    // Save directly to S3 without using Sharp
+    await s3Commands.addObject(fileName, file.buffer);
 
-  let category = await new Category({
-    name: req.body.name,
-    icon: req.body.icon,
-    color: req.body.color,
-    image: `${basePath}${fileName}`,
-    // image: (file && fileName) || "",
-  });
+    let category = await new Category({
+      name: req.body.name,
+      icon: req.body.icon,
+      color: req.body.color,
+      // image: `${basePath}${fileName}`,
+      image: (file && fileName) || "",
+    });
 
-  category = await category.save();
+    category = await category.save();
 
-  if (!category) {
-    return res.status(404).send("the category cannot be created");
+    if (!category) {
+      return res.status(404).send("The category cannot be created");
+    }
+
+    res.send(category);
+  } catch (error) {
+    console.error("S3 Upload Error:", error);
+    return res.status(500).send("Internal server error");
   }
-
-  res.send(category);
 });
 
 routerCategory.put("/:id", uploadOptions.single("image"), async (req, res) => {
