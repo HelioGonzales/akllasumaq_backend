@@ -6,6 +6,10 @@ import { Category } from "../models/category.js";
 import { s3Commands } from "../helper/s3Helper.js";
 import * as fs from "fs";
 
+import dotenv from "dotenv";
+
+dotenv.config();
+
 export const routerCategory = express.Router();
 
 const FILE_TYPE_MAP = {
@@ -13,6 +17,8 @@ const FILE_TYPE_MAP = {
   "image/jpeg": "jpeg",
   "image/jpg": "jpg",
 };
+
+const s3BaseUrl = `https://akllasumaq.s3.eu-north-1.amazonaws.com/`;
 
 // const storage = multer.diskStorage({
 //   destination: function (req, file, cb) {
@@ -126,7 +132,8 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
   }
 
   const fileName = req.file.filename;
-  const basePath = `https://${req.get("host")}/public/uploads/`;
+  // const basePath = `https://${req.get("host")}/public/uploads/`;
+  const basePath = `${s3BaseUrl}${file.path}`;
 
   try {
     // Use Sharp to process the image (e.g., rotate) before saving to S3
@@ -139,7 +146,10 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
       name: req.body.name,
       icon: req.body.icon,
       color: req.body.color,
-      image: (file && fileName) || "",
+      // image: (file && fileName) || "",
+      image: basePath.includes("public\\uploads\\")
+        ? basePath.replace("public\\uploads\\", "")
+        : basePath,
     });
 
     category = await category.save();
