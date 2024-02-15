@@ -147,9 +147,10 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
       icon: req.body.icon,
       color: req.body.color,
       // image: (file && fileName) || "",
-      image: basePath.includes("public\\uploads\\")
-        ? basePath.replace("public\\uploads\\", "")
-        : basePath,
+      image:
+        basePath.includes("public\\uploads\\") || "public/uploads/"
+          ? basePath.replace("public\\uploads\\", "")
+          : basePath,
     });
 
     category = await category.save();
