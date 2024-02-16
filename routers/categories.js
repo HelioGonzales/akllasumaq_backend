@@ -148,8 +148,10 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
       color: req.body.color,
       // image: (file && fileName) || "",
       image:
-        basePath.includes("public\\uploads\\") || "public/uploads/"
-          ? basePath.replace("public\\uploads\\", "")
+        basePath.includes("public\\uploads\\") ||
+        basePath.includes("public/uploads/")
+          ? basePath.replace("public\\uploads\\", "") ||
+            basePath.replace("public/uploads/", "")
           : basePath,
     });
 
