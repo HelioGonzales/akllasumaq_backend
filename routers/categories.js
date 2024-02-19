@@ -12,33 +12,8 @@ dotenv.config();
 
 export const routerCategory = express.Router();
 
-const FILE_TYPE_MAP = {
-  "image/png": "png",
-  "image/jpeg": "jpeg",
-  "image/jpg": "jpg",
-};
-
 const s3BaseUrl = `https://akllasumaq.s3.eu-north-1.amazonaws.com/`;
 
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     const isValid = FILE_TYPE_MAP[file.mimetype];
-//     let uploadError = new Error("Invalid image type");
-
-//     if (isValid) {
-//       uploadError = null;
-//     }
-
-//     cb(uploadError, "public/uploads");
-//   },
-//   filename: function (req, file, cb) {
-//     const fileName = file.originalname.split(" ").join("-");
-//     const extension = FILE_TYPE_MAP[file.mimetype];
-//     cb(null, `${fileName}-${Date.now()}.${extension}`);
-//   },
-// });
-
-// Other option
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = "public/uploads";
@@ -94,45 +69,12 @@ routerCategory.get("/:id", async (req, res) => {
 });
 
 routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
-  //   const file = req.file;
-  //   if (!file) {
-  //     return res.status(400).send("No image in the request");
-  //   }
-
-  //   const fileName = req.file.filename;
-  //   const basePath = `https://${req.get("host")}/public/uploads/`;
-
-  //   try {
-  //     // Save directly to S3 without using Sharp
-  //     await s3Commands.addObject(fileName, file.buffer);
-
-  //     let category = await new Category({
-  //       name: req.body.name,
-  //       icon: req.body.icon,
-  //       color: req.body.color,
-  //       // image: `${basePath}${fileName}`,
-  //       image: (file && fileName) || "",
-  //     });
-
-  //     category = await category.save();
-
-  //     if (!category) {
-  //       return res.status(404).send("The category cannot be created");
-  //     }
-
-  //     res.send(category);
-  //   } catch (error) {
-  //     console.error("S3 Upload Error:", error);
-  //     return res.status(500).send("Internal server error");
-  //   }
-
   const file = req.file;
   if (!file) {
     return res.status(400).send("No image in the request");
   }
 
   const fileName = req.file.filename;
-  // const basePath = `https://${req.get("host")}/public/uploads/`;
   const basePath = `${s3BaseUrl}${file.path}`;
 
   try {
@@ -166,60 +108,201 @@ routerCategory.post(`/`, uploadOptions.single("image"), async (req, res) => {
   }
 });
 
+// routerCategory.put("/:id", uploadOptions.single("image"), async (req, res) => {
+//   if (!mongoose.isValidObjectId(req.params.id)) {
+//     res.status(400).send("Invalid Id");
+//     return;
+//   }
+
+//   const category = await Category.findById(req.params.id);
+//   if (!category) {
+//     res.status(400).send("Invalid Category");
+//     return;
+//   }
+
+//   let imagesPath = category.image;
+
+//   try {
+//     const file = req.file;
+
+//     if (file) {
+//       const fileName = req.file.filename;
+//       const basePath = `${s3BaseUrl}${file.path}`;
+
+//       // Use Sharp to process the image (e.g., rotate) before saving to S3
+//       const processedImageBuffer = await sharp(file.path).rotate().toBuffer();
+
+//       // Save processed image to S3
+//       await s3Commands.addObject(fileName, processedImageBuffer);
+
+//       imagesPath = basePath.includes("public\\uploads\\")
+//         ? basePath.replace("public\\uploads\\", "")
+//         : basePath.includes("public/uploads/")
+//         ? basePath.replace("public/uploads/", "")
+//         : basePath;
+//     }
+
+//     const updatedCategory = await Category.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         name: req.body.name,
+//         icon: req.body.icon,
+//         color: req.body.color,
+//         image: imagesPath,
+//       },
+//       {
+//         new: true,
+//       }
+//     );
+
+//     if (!updatedCategory) {
+//       return res.status(404).send("The category cannot be updated");
+//     }
+
+//     // Delete the old image from AWS S3
+//     if (file && category.image) {
+//       const oldImageKey = category.image.split("/").pop(); // Extract filename from the old image path
+//       await s3Commands.deleteObject(oldImageKey);
+//     }
+
+//     // Delete the local image file
+//     if (category.image) {
+//       const localImagePath = `public/uploads/${category.image
+//         .split("/")
+//         .pop()}`;
+//       if (fs.existsSync(localImagePath)) {
+//         fs.unlinkSync(localImagePath);
+//       }
+//     }
+
+//     // Save the new image to local file system
+//     const newLocalImagePath = `public/uploads/${file.filename}`;
+//     fs.writeFileSync(newLocalImagePath, processedImageBuffer);
+
+//     res.send(updatedCategory);
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return res.status(500).send("Internal server error");
+//   }
+// });
+
+/* New PUT method */
+
 routerCategory.put("/:id", uploadOptions.single("image"), async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) {
     res.status(400).send("Invalid Id");
+    return;
   }
 
   const category = await Category.findById(req.params.id);
-  if (!category) return res.status(400).send("Invalid Category");
-
-  const file = req.file;
-  let imagesPath;
-
-  if (file) {
-    const fileName = req.file.filename;
-    const basePath = `https://${req.get("host")}/public/uploads/`;
-    imagesPath = `${basePath}${fileName}`;
-  } else {
-    imagesPath = category.image;
+  if (!category) {
+    res.status(400).send("Invalid Category");
+    return;
   }
 
-  const updatedCategory = await Category.findByIdAndUpdate(
-    req.params.id,
-    {
-      name: req.body.name,
-      icon: req.body.icon,
-      color: req.body.color,
-      image: imagesPath,
-    },
-    {
-      new: true,
+  let imagesPath = category.image;
+  let processedImageBuffer; // Define processedImageBuffer in a broader scope
+
+  try {
+    const file = req.file;
+
+    if (file) {
+      const fileName = req.file.filename;
+      const basePath = `${s3BaseUrl}${file.path}`;
+
+      // Use Sharp to process the image (e.g., rotate) before saving to S3
+      processedImageBuffer = await sharp(file.path).rotate().toBuffer();
+
+      // Save processed image to S3
+      await s3Commands.addObject(fileName, processedImageBuffer);
+
+      imagesPath = basePath.includes("public\\uploads\\")
+        ? basePath.replace("public\\uploads\\", "")
+        : basePath.includes("public/uploads/")
+        ? basePath.replace("public/uploads/", "")
+        : basePath;
     }
-  );
 
-  if (!updatedCategory) {
-    return res.status(404).send("the category cannot be updated");
+    const updatedCategory = await Category.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        icon: req.body.icon,
+        color: req.body.color,
+        image: imagesPath,
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!updatedCategory) {
+      return res.status(404).send("The category cannot be updated");
+    }
+
+    // Delete the old image from AWS S3
+    if (file && category.image) {
+      const oldImageKey = category.image.split("/").pop(); // Extract filename from the old image path
+      await s3Commands.deleteObject(oldImageKey);
+    }
+
+    // Delete the local image file
+    if (category.image) {
+      const localImagePath = `public/uploads/${category.image
+        .split("/")
+        .pop()}`;
+      if (fs.existsSync(localImagePath)) {
+        fs.unlinkSync(localImagePath);
+      }
+    }
+
+    // Save the new image to local file system
+    if (file) {
+      const newLocalImagePath = `public/uploads/${file.filename}`;
+      fs.writeFileSync(newLocalImagePath, processedImageBuffer);
+    }
+
+    res.send(updatedCategory);
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).send("Internal server error");
   }
-
-  res.send(category);
 });
 
-routerCategory.delete("/:id", (req, res) => {
-  Category.findByIdAndRemove(req.params.id)
-    .then((category) => {
-      if (category) {
-        return res.status(200).json({
-          success: true,
-          message: "Category is deleted",
-        });
-      } else {
-        return res
-          .status(404)
-          .json({ success: false, message: "Category not found" });
+routerCategory.delete("/:id", async (req, res) => {
+  try {
+    const category = await Category.findByIdAndRemove(req.params.id);
+
+    if (category) {
+      // Delete the image from AWS S3
+      if (category.image) {
+        const imageKey = category.image.split("/").pop(); // Extract filename from the image path
+        await s3Commands.deleteObject(imageKey);
       }
-    })
-    .catch((err) => {
-      return res.status(400).json({ success: false, error: err });
-    });
+
+      // Delete the local image file
+      if (category.image) {
+        const localImagePath = `public/uploads/${category.image
+          .split("/")
+          .pop()}`;
+        if (fs.existsSync(localImagePath)) {
+          fs.unlinkSync(localImagePath);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Category and associated image are deleted",
+      });
+    } else {
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal server error" });
+  }
 });
