@@ -117,8 +117,11 @@ routerOrder.post("/create-checkout-session", async (req, res) => {
     payment_method_types: ["card"],
     line_items: lineItems,
     mode: "payment",
-    success_url: "http://localhost:4200/cart-page/thank-you",
-    cancel_url: "http://localhost:4200/cart-page/error",
+    // success_url: "http://localhost:4200/cart-page/thank-you",
+    // cancel_url: "http://localhost:4200/cart-page/error",
+    success_url:
+      "https://heliogonzales.github.io/akllasumaq/#/cart-page/thank-you",
+    cancel_url: "https://heliogonzales.github.io/akllasumaq/#/cart-page/error",
   });
 
   res.json({ id: session.id });
